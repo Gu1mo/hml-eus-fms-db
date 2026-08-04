@@ -1,0 +1,9 @@
+{
+  "pacote_id": 6,
+  "versao": 2,
+  "etapa": "PRODUCAO",
+  "execucao_id": 8,
+  "status_execucao": "SUCESSO",
+  "solicitante": "Breno Sousa",
+  "motivo": "Criação da stored procedure usp_hot_st para copiar dados de seis tabelas de vigilância do banco de dados do cliente para o banco de dados de arquivos quente/frio do locatário no mesmo servidor SQL, mantendo os últimos N datas. A procedure é idempotente por data, garantindo a segurança em caso de reexecução. Além disso, a ordem de inserção e exclusão é feita de forma a garantir a integridade referencial."
+}
