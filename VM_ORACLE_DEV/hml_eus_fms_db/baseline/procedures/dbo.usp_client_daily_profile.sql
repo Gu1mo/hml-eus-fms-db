@@ -14,13 +14,24 @@ AS
 --Consolida ordens, volume, temporalidade, contrapartes
 --e alertas. Detalhe de contrapartes em tb_client_counterparty.
 --Segue o padrao de log e reprocessamento do projeto.
---*/
 
+--Dia: 04/08/2026 - Guimo e Gobbo
+--Tratamento dos mini indices 
+--quando 'WIN%' multiplicado volume  por * 0.20
+--quando 'WDO%' multiplicado volume  por * 10.00
+--quando 'BIT%' multiplicado volume  por * 0.10
+
+--Dia: 04/08/2026 - Guimo e Gobbo
+--Inclusao das colunas total_orders_modify e modify_rate_pct
+--(quantidade e percentual de ordens modificadas/replace, exec_type = '5')
+
+--*/
 ------------------------------------------------------------
 -- Declaracao das variaveis de log
 ------------------------------------------------------------
 DECLARE @LogID             INT;
 DECLARE @log_process_date  DATE = (SELECT MAX(process_date) FROM tb_order);
+
 
 BEGIN TRY
 
@@ -79,7 +90,7 @@ BEGIN TRY
     left JOIN dbo.tb_trade t
         ON  d.symbol   = t.symbol
         AND d.trade_id = t.trade_id
-    WHERE CAST(d.process_date AS DATE) = @log_process_date and account is not null;
+    WHERE CAST(d.process_date AS DATE) = @log_process_date and account is not null; 
 
 
     --------------------------------------------------------
@@ -97,22 +108,43 @@ BEGIN TRY
         COUNT(DISTINCT CASE WHEN exec_type = '4'  THEN order_id END)                       AS total_orders_cancelled,
         COUNT(DISTINCT CASE WHEN ord_status = '8'   THEN order_id END)                       AS total_orders_rejected,
 
-        ISNULL(SUM(CASE WHEN exec_type = 'F'              THEN last_qty * last_px END), 0) AS total_financial_volume,
-        ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 1 THEN last_qty * last_px END), 0) AS buy_volume,
-        ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 2 THEN last_qty * last_px END), 0) AS sell_volume,
+         CASE
+            WHEN symbol LIKE 'WIN%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' THEN last_qty * last_px END), 0) * 0.20
+            WHEN symbol LIKE 'WDO%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' THEN last_qty * last_px END), 0)* 10.00
+            WHEN symbol LIKE 'BIT%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' THEN last_qty * last_px END), 0) * 0.10
+            ELSE ISNULL(SUM(CASE WHEN exec_type = 'F'              THEN last_qty * last_px END), 0)  -- demais ativos mantêm o original
+        END AS total_financial_volume,
+
+        --ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 1 THEN last_qty * last_px END), 0) AS buy_volume,
+		CASE
+            WHEN symbol LIKE 'WIN%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 1 THEN last_qty * last_px END), 0) * 0.20
+            WHEN symbol LIKE 'WDO%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 1 THEN last_qty * last_px END), 0)* 10.00
+            WHEN symbol LIKE 'BIT%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 1 THEN last_qty * last_px END), 0) * 0.10
+            ELSE ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 1 THEN last_qty * last_px END), 0)  -- demais ativos mantêm o original
+        END buy_volume,
+
+        --ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 2 THEN last_qty * last_px END), 0) AS sell_volume,
+		CASE
+            WHEN symbol LIKE 'WIN%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 2 THEN last_qty * last_px END), 0) * 0.20
+            WHEN symbol LIKE 'WDO%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 2 THEN last_qty * last_px END), 0)* 10.00
+            WHEN symbol LIKE 'BIT%' THEN ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 2 THEN last_qty * last_px END), 0) * 0.10
+            ELSE ISNULL(SUM(CASE WHEN exec_type = 'F' AND side = 2 THEN last_qty * last_px END), 0)  -- demais ativos mantêm o original
+        END sell_volume,
+
         SUM(CASE WHEN exec_type = 'F' THEN 1 ELSE 0 END)                                   AS trade_count,
 
         MIN(CASE WHEN exec_type = 'F' THEN transact_time_br END)                           AS first_trade_time,
         MAX(CASE WHEN exec_type = 'F' THEN transact_time_br END)                           AS last_trade_time,
 
-        SUM(CASE WHEN exec_type = 'F' THEN is_direct ELSE 0 END)                           AS total_direct
+        SUM(CASE WHEN exec_type = 'F' THEN is_direct ELSE 0 END)                           AS total_direct,
+
+        COUNT(DISTINCT CASE WHEN exec_type = '5'  THEN order_id END)                       AS total_orders_modify
 
     INTO #aggregated
     FROM #base
     GROUP BY process_date, account, symbol;
 
 	
-
 
 
     --------------------------------------------------------
@@ -125,13 +157,20 @@ BEGIN TRY
         account,
         symbol,
         counterparty,
-        SUM(last_qty * last_px) AS volume
+        --SUM(last_qty * last_px) AS volume
+		
+		CASE
+            WHEN symbol LIKE 'WIN%' THEN SUM(last_qty * last_px) * 0.20
+            WHEN symbol LIKE 'WDO%' THEN SUM(last_qty * last_px)* 10.00
+            WHEN symbol LIKE 'BIT%' THEN SUM(last_qty * last_px) * 0.10
+            ELSE SUM(last_qty * last_px)  -- demais ativos mantêm o original
+        END AS volume
+
     INTO #counterparties
     FROM #base
     WHERE exec_type    = 'F'
       AND counterparty IS NOT NULL
     GROUP BY process_date, account, symbol, counterparty;
-
 
 
     --------------------------------------------------------
@@ -174,7 +213,9 @@ BEGIN TRY
         main_counterparty,
         direct_trades_pct,
         total_alerts_day,
-        created_at
+        created_at,
+        total_orders_modify,
+        modify_rate_pct
     )
     SELECT
         a.process_date,
@@ -210,7 +251,11 @@ BEGIN TRY
 
 
         ISNULL(al.alert_count, 0)                                       AS total_alerts_day,
-        GETDATE()                                                       AS created_at
+        GETDATE()                                                       AS created_at,
+
+        a.total_orders_modify,
+        ISNULL(CAST(a.total_orders_modify AS DECIMAL(18,4))
+               / NULLIF(a.total_orders_sent, 0) * 100, 0)              AS modify_rate_pct
 		
     FROM #aggregated a
 
@@ -266,9 +311,9 @@ BEGIN TRY
 
 
 
-----------------------------------------------------------
+--------------------------------------------------------
  --CLIENT DAILY PROFILE >>>>> FIM
-----------------------------------------------------------
+--------------------------------------------------------
 
     UPDATE log_ms
        SET dt_end             = GETDATE()

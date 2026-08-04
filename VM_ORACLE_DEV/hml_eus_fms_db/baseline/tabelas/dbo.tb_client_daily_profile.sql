@@ -23,5 +23,7 @@ CREATE TABLE [dbo].[tb_client_daily_profile] (
     [rlp_trades_pct] decimal(18,4) NOT NULL DEFAULT ((0)),
     [total_alerts_day] int NOT NULL DEFAULT ((0)),
     [created_at] datetime2(7) NOT NULL DEFAULT (getdate()),
+    [total_orders_modify] int NULL,
+    [modify_rate_pct] decimal(18,4) NULL,
     CONSTRAINT [PK_tb_client_daily_profile] PRIMARY KEY ([id])
 );

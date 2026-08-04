@@ -18,6 +18,12 @@ AS
 --   tb_symbol_stats_time_windows (volume por janela horaria)
 --   tb_symbol_stats_price_chart  (OHLC de 5 min para grafico)
 -- Segue o padrao de log e reprocessamento do projeto.
+
+--Dia: 04/08/2026 - Guimo e Gobbo
+--Tratamento dos mini indices 
+--quando 'WIN%' multiplicado volume  por * 0.20
+--quando 'WDO%' multiplicado volume  por * 10.00
+--quando 'BIT%' multiplicado volume  por * 0.10
 */
 
 -- ----------------------------------------------------------------
@@ -86,7 +92,15 @@ BEGIN TRY
     SELECT
         tb.process_date,
         tb.symbol,
-        SUM(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN tb.trade_value ELSE 0 END)   AS broker_volume,
+        --SUM(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN tb.trade_value ELSE 0 END)   AS broker_volume,
+		 
+		 CASE
+            WHEN tb.symbol LIKE 'WIN%' THEN SUM(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN tb.trade_value ELSE 0 END) * 0.20
+            WHEN tb.symbol LIKE 'WDO%' THEN SUM(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN tb.trade_value ELSE 0 END) * 10.00
+            WHEN tb.symbol LIKE 'BIT%' THEN SUM(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN tb.trade_value ELSE 0 END) * 0.10
+            ELSE SUM(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN tb.trade_value ELSE 0 END)  -- demais ativos mantêm o original
+        END AS broker_volume,
+
         SUM(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN tb.quantity  ELSE 0 END)     AS broker_qty,
         COUNT(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN 1 END)                     AS broker_trade_count,
         AVG(CASE WHEN tb.broker_buy = @party_id OR tb.broker_sell = @party_id THEN tb.price END)                AS broker_trade_value_avg,
@@ -185,7 +199,18 @@ BEGIN TRY
         CAST(ep.process_date AS DATE)                                           AS process_date,
         ep.symbol,
         CAST(ep.account AS VARCHAR(50))                                         AS account,
-        SUM(CAST(ep.lastqty AS DECIMAL(18,4)) * CAST(ep.last_px AS DECIMAL(18,4))) AS client_volume,
+        
+		
+		--SUM(CAST(ep.lastqty AS DECIMAL(18,4)) * CAST(ep.last_px AS DECIMAL(18,4))) AS client_volume,
+
+		 CASE
+            WHEN ep.symbol LIKE 'WIN%' THEN SUM(CAST(ep.lastqty AS DECIMAL(18,4)) * CAST(ep.last_px AS DECIMAL(18,4))) * 0.20
+            WHEN ep.symbol LIKE 'WDO%' THEN SUM(CAST(ep.lastqty AS DECIMAL(18,4)) * CAST(ep.last_px AS DECIMAL(18,4))) * 10.00
+            WHEN ep.symbol LIKE 'BIT%' THEN SUM(CAST(ep.lastqty AS DECIMAL(18,4)) * CAST(ep.last_px AS DECIMAL(18,4))) * 0.10
+            ELSE SUM(CAST(ep.lastqty AS DECIMAL(18,4)) * CAST(ep.last_px AS DECIMAL(18,4)))  -- demais ativos mantêm o original
+        END AS client_volume,
+
+
         SUM(CAST(ep.lastqty AS DECIMAL(18,4)))                                  AS client_qty,
         COUNT(1)                                                                AS client_trade_count
     INTO #client_agg
@@ -519,7 +544,7 @@ BEGIN TRY
     -- ----------------------------------------------------------------
     -- Insert: tb_symbol_stats_top_clients
     -- Top 5 clientes por volume financeiro por simbolo
-    -- ----------------------------------------------------------------
+    ---- ----------------------------------------------------------------
     INSERT INTO dbo.tb_symbol_stats_top_clients (
         process_date, symbol, rank_pos, account,
         client_volume, client_qty, client_trade_count, created_at
@@ -585,10 +610,9 @@ BEGIN TRY
            volume, trade_count, GETDATE()
     FROM #price_chart;
 
-
--- ----------------------------------------------------------------
--- SYMBOL STATS >>>>> FIM
--- ----------------------------------------------------------------
+ ----------------------------------------------------------------
+ --SYMBOL STATS >>>>> FIM
+ ----------------------------------------------------------------
 
     UPDATE log_ms
           SET dt_end               = GETDATE()

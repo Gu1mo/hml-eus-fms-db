@@ -1,0 +1,9 @@
+{
+  "pacote_id": 2,
+  "versao": 1,
+  "etapa": "PRODUCAO",
+  "execucao_id": 5,
+  "status_execucao": "SUCESSO",
+  "solicitante": "Guilherme Martins Oliveira",
+  "motivo": "Inclusão das colunas total_orders_modify e modify_rate_pct na tabela tb_client_daily_profile, além do tratamento dos mini índices nas procedures usp_symbol_stats e usp_client_daily_profile. O tratamento dos mini índices consiste em multiplicar o volume por fatores específicos com base nos símbolos 'WIN%', 'WDO%' e 'BIT%'. Além disso, haverá a inclusão das colunas modify_rate_pct e total_orders_modify na view vw_client_6m_summary. Tarefa relacionado aos dados quentes e frios do fms."
+}
