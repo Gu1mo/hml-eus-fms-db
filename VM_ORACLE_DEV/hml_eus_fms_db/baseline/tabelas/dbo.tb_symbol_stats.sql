@@ -1,0 +1,40 @@
+CREATE TABLE [dbo].[tb_symbol_stats] (
+    [id_symbol_stats] int IDENTITY(1,1) NOT NULL,
+    [process_date] date NOT NULL,
+    [symbol] varchar(20) NOT NULL,
+    [market_open_price] decimal(18,4) NULL,
+    [market_close_price] decimal(18,4) NULL,
+    [market_avg_price] decimal(18,4) NULL,
+    [market_min_price] decimal(18,4) NULL,
+    [market_max_price] decimal(18,4) NULL,
+    [market_trade_count] int NULL,
+    [market_intraday] decimal(18,4) NULL,
+    [market_interday] decimal(18,4) NULL,
+    [market_volume] decimal(18,2) NULL,
+    [market_qty] decimal(18,2) NULL,
+    [broker_trade_value_open] decimal(18,4) NULL,
+    [broker_trade_value_close] decimal(18,4) NULL,
+    [broker_trade_value_avg] decimal(18,4) NULL,
+    [broker_trade_value_min] decimal(18,4) NULL,
+    [broker_trade_value_max] decimal(18,4) NULL,
+    [broker_trade_count] int NULL,
+    [broker_volume] decimal(18,2) NULL,
+    [broker_qty] decimal(18,2) NULL,
+    [broker_avg_quantity] decimal(18,2) NULL,
+    [distinct_client_count] int NULL,
+    [distinct_broker_count] int NULL,
+    [peak_volume_window] varchar(11) NULL,
+    [avg_trades_per_minute] decimal(18,4) NULL,
+    [avg_ticket] decimal(18,4) NULL,
+    [relevant_facts_count] int NOT NULL DEFAULT ((0)),
+    [broker_market_share_pct] decimal(18,4) NULL,
+    [is_volume_atypical] bit NOT NULL DEFAULT ((0)),
+    [is_trade_count_atypical] bit NOT NULL DEFAULT ((0)),
+    [is_price_var_atypical] bit NOT NULL DEFAULT ((0)),
+    [created_at] datetime2(3) NOT NULL DEFAULT (getdate()),
+    CONSTRAINT [PK_tb_symbol_stats] PRIMARY KEY ([id_symbol_stats])
+);
+
+CREATE INDEX [IX_tb_symbol_stats_process_date] ON [dbo].[tb_symbol_stats] ([process_date]);
+
+CREATE INDEX [IX_tb_symbol_stats_symbol] ON [dbo].[tb_symbol_stats] ([symbol]);

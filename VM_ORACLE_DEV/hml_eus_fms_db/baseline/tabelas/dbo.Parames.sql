@@ -1,0 +1,20 @@
+CREATE TABLE [dbo].[Parames] (
+    [Id] int IDENTITY(1,1) NOT NULL,
+    [tpPessoa] nvarchar(MAX) NULL,
+    [cpfCnpj] nvarchar(MAX) NULL,
+    [nome] nvarchar(MAX) NULL,
+    [email] nvarchar(MAX) NULL,
+    [expiraSenha] nvarchar(MAX) NULL,
+    [qtdDias] nvarchar(MAX) NULL,
+    [nrTentativas] nvarchar(MAX) NULL,
+    [nrMinCaracter] nvarchar(MAX) NULL,
+    [nrMaxCaracter] nvarchar(MAX) NULL,
+    [nrNumericos] nvarchar(MAX) NULL,
+    [nrEspeciais] nvarchar(MAX) NULL,
+    [nrMinusculo] nvarchar(MAX) NULL,
+    [nrMaiusculo] nvarchar(MAX) NULL,
+    [Visivel] bit NULL,
+    [SomenteLeitura] bit NULL,
+    [QTDDESENHAS] int NULL,
+    CONSTRAINT [PK_Parames] PRIMARY KEY ([Id])
+);

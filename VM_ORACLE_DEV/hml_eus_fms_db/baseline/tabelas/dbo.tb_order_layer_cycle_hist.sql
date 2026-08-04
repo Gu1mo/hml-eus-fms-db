@@ -1,0 +1,31 @@
+CREATE TABLE [dbo].[tb_order_layer_cycle_hist] (
+    [cycle_id] bigint IDENTITY(1,1) NOT NULL,
+    [order_key] bigint NOT NULL,
+    [related_order_key] bigint NOT NULL,
+    [order_id] bigint NULL,
+    [secondary_order_id] bigint NULL,
+    [account] bigint NULL,
+    [order_timestamp] datetime2(7) NULL,
+    [msg_type] int NULL,
+    [party_id] int NULL,
+    [price] decimal(17,2) NULL,
+    [side] tinyint NULL,
+    [quantity] bigint NULL,
+    [symbol] varchar(30) NULL,
+    [exec_type] varchar(32) NULL,
+    [ord_status] varchar(30) NULL,
+    [process_date] datetime2(7) NOT NULL,
+    [book_timestamp] datetime2(7) NULL,
+    [book_spread] decimal(17,2) NULL,
+    [order_spread] decimal(17,2) NULL,
+    [trade_id] bigint NULL,
+    [trade_time] time(7) NULL,
+    [broker_buy] int NULL,
+    [broker_sell] int NULL,
+    [direct] int NULL,
+    [aggressor] char(1) NULL,
+    [describe] nvarchar(150) NULL,
+    CONSTRAINT [PK_tb_order_layer_cycle_hist] PRIMARY KEY ([order_key], [related_order_key], [process_date])
+);
+
+ALTER TABLE [dbo].[tb_order_layer_cycle_hist] ADD CONSTRAINT [FK_tb_order_layer_cycle_hist_1] FOREIGN KEY ([order_key], [process_date]) REFERENCES [dbo].[tb_order_layer_hist] ([order_key], [process_date]);
